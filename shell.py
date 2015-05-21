@@ -1,14 +1,9 @@
 #!/usr/bin/env python3
 
 import os, sys
-import signal
+import cd, exit
 
-def signal_handler(signum, frame):
-  return True
-
-def execute(args=list):
-  output_file = ''
-
+def execute(args):
   if len(args) > 1 and args[-2] == '>':
     output_file = args[-1]
     args = args[:-2]
@@ -17,47 +12,16 @@ def execute(args=list):
 
   os.execvp(args[0], args)
 
-def pipe_exec(out_command, in_command, readfd, writefd):
-  pid = os.fork()
-
-  if pid == 0:
-    pid2 = os.fork()
-
-    if pid2 == 0:
-      os.dup2(writefd, sys.stdout.fileno())
-      execute(out_command)
-
-    else:
-      os.wait()
-      os.close(writefd)
-      os.dup2(readfd, sys.stdin.fileno())
-      execute(in_command)
-
-  else:
-    os.close(readfd)
-    os.close(writefd)
-    os.wait()
-
 def main():
-  signal.signal(signal.SIGINT, signal_handler)
-
   while True:
     line = input('dtshell$ ')
     args = line.split(' ')
 
-    if line == '':
-      continue
+    if args[0] == "cd":
+      cd.cd(args)
 
-    elif args[0] == 'exit':
-      sys.exit()
-
-    elif args[0] == 'cd':
-      os.chdir(args[1])
-
-    elif '|' in args:
-      read, write = os.pipe()
-      pipe_location = args.index('|')
-      pipe_exec(args[:pipe_location], args[pipe_location+1:], read, write)
+    elif args[0] == "exit":
+      exit.exit()
 
     else:
       pid = os.fork()
