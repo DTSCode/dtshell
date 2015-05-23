@@ -2,7 +2,6 @@
  * Todo:
  *  Make shell hot-swappable via dlfcn.h
  *  Put in piping
- *  Put in signal handling
 */
 
 #include "shell.h"
@@ -13,6 +12,8 @@
 #include <unistd.h>
 
 int main(int argc, char **argv, char **env) {
+  shell_register_signals();
+
   while(true) {
     char hostname[7];
     gethostname(hostname, 7);

@@ -1,3 +1,5 @@
+#include "shell.h"
+
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -10,7 +12,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-char **split(char *line, int *arg_count) {
+static char **split(char *line, int *arg_count) {
   char **words = NULL;
   char *word = strtok(line, " ");
   size_t counter = 0;
@@ -29,7 +31,7 @@ char **split(char *line, int *arg_count) {
   return words;
 }
 
-bool dir_exists(char path[]) {
+static bool dir_exists(char path[]) {
     struct stat sb;
     bool exists = false;
 
@@ -40,7 +42,7 @@ bool dir_exists(char path[]) {
     return exists;
 }
 
-bool run_builtin(char **args, int arg_count) {
+static bool run_builtin(char **args, int arg_count) {
   bool is_builtin_command = false;
 
   if(strcmp(args[0], "cd") == 0) {
@@ -97,6 +99,7 @@ void shell_execute(char *line) {
         args[arg_count-1] = 0;
       }
 
+      shell_register_current_pid(pid);
       execvp(args[0], args);
     }
 
