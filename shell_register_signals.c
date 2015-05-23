@@ -8,7 +8,7 @@ static pid_t CURRENT_PID = 0;
 static void signal_handler(int signum) {
   switch(signum) {
     case SIGINT: {
-      if(CURRENT_PID != 0) {
+      if(CURRENT_PID > 1) {
         kill(CURRENT_PID, SIGINT);
       }
 
