@@ -1,7 +1,6 @@
 #include "shell.h"
 
 #include <stdio.h>
-#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -13,8 +12,12 @@
 #include <sys/stat.h>
 
 static char **split(char *line, int *arg_count, char *delim) {
+  char *copy = malloc(strlen(line));
+
+  strcpy(copy, line);
+
   char **words = NULL;
-  char *word = strtok(line, delim);
+  char *word = strtok(copy, delim);
   size_t counter = 0;
 
   while(word != NULL) {
@@ -28,6 +31,7 @@ static char **split(char *line, int *arg_count, char *delim) {
   words = (char**)realloc(words, (counter+1)*sizeof(char*));
   words[counter] = NULL;
   *arg_count = counter;
+  free(copy);
   return words;
 }
 
@@ -70,7 +74,55 @@ static bool run_builtin(char **args, int arg_count) {
   return is_builtin_command;
 }
 
-void pipe_execute(char *line) {
+static char **redirect(char **args, int arg_count) {
+  if(strcmp(args[arg_count-2], ">") == 0) {
+    int fd = open(args[arg_count-1], O_WRONLY|O_CREAT|O_TRUNC, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP);
+    dup2(fd, fileno(stdout));
+    args[arg_count-2] = 0;
+    args[arg_count-1] = 0;
+  }
+
+  else if(strcmp(args[arg_count-2], ">>") == 0) {
+    int fd = open(args[arg_count-1], O_WRONLY|O_CREAT|O_APPEND, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP);
+    dup2(fd, fileno(stdout));
+    args[arg_count-2] = 0;
+    args[arg_count-1] = 0;
+  }
+
+  else if(strcmp(args[arg_count-2], "<") == 0) {
+    int fd = open(args[arg_count-1], O_RDONLY);
+    dup2(fd, fileno(stdin));
+    args[arg_count-2] = 0;
+    args[arg_count-1] = 0;
+  }
+
+  return args;
+}
+
+static void execute(char *line) {
+  int arg_count;
+  char **args = split(line, &arg_count, " ");
+
+    if(!run_builtin(args, arg_count)) {
+      pid_t pid = fork();
+
+      if(pid == 0) {
+        if(arg_count >= 3) {
+          args = redirect(args, arg_count);
+        }
+
+        shell_register_current_pid(pid);
+        execvp(args[0], args);
+      }
+
+      else {
+        int status;
+        wait(&status);
+      }
+    }
+}
+
+static void pipe_execute(char *line) {
 }
 
 void shell_execute(char *line) {
@@ -90,40 +142,7 @@ void shell_execute(char *line) {
   }
 
   else {
-    if(!run_builtin(args, arg_count)) {
-      pid_t pid = fork();
-
-      if(pid == 0) {
-        if(arg_count >= 3 && strcmp(args[arg_count-2], ">") == 0) {
-          int fd = open(args[arg_count-1], O_WRONLY|O_CREAT|O_TRUNC, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP);
-          dup2(fd, fileno(stdout));
-          args[arg_count-2] = 0;
-          args[arg_count-1] = 0;
-        }
-
-        else if(arg_count >= 3 && strcmp(args[arg_count-2], ">>") == 0) {
-          int fd = open(args[arg_count-1], O_WRONLY|O_CREAT|O_APPEND, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP);
-          dup2(fd, fileno(stdout));
-          args[arg_count-2] = 0;
-          args[arg_count-1] = 0;
-        }
-
-        else if(arg_count >= 3 && strcmp(args[arg_count-2], "<") == 0) {
-          int fd = open(args[arg_count-1], O_RDONLY);
-          dup2(fd, fileno(stdin));
-          args[arg_count-2] = 0;
-          args[arg_count-1] = 0;
-        }
-
-        shell_register_current_pid(pid);
-        execvp(args[0], args);
-      }
-
-      else {
-        int status;
-        wait(&status);
-      }
-    }
+    execute(line);
   }
 
   free(args);
