@@ -1,7 +1,6 @@
 #include "shell.h"
 
 #include <signal.h>
-#include <sys/types.h>
 
 static pid_t CURRENT_PID = 0;
 

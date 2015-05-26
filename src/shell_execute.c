@@ -1,15 +1,10 @@
 #include "shell.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <errno.h>
 
 #include <fcntl.h>
-#include <unistd.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 
 static char **split(char *line, int *arg_count, char *delim) {
   char *copy = malloc(strlen(line));
@@ -113,6 +108,7 @@ static void execute(char *line) {
 
         shell_register_current_pid(pid);
         execvp(args[0], args);
+        fprintf(stderr, "error: couldn't execute %s\n", args[0]);
       }
 
       else {
@@ -122,28 +118,9 @@ static void execute(char *line) {
     }
 }
 
-static void pipe_execute(char *line) {
-}
-
 void shell_execute(char *line) {
   int arg_count;
   char **args = split(line, &arg_count, " ");
-  bool pipe_found = false;
-
-  for(int iter = 0; iter < arg_count; iter++) {
-    if(strcmp(args[iter], "|") == 0) {
-      pipe_found = true;
-      break;
-    }
-  }
-
-  if(pipe_found) {
-    pipe_execute(line);
-  }
-
-  else {
-    execute(line);
-  }
-
+  execute(line);
   free(args);
 }

@@ -1,18 +1,13 @@
 #include "shell.h"
 
-#include <stdio.h>
-#include <string.h>
-
 #include <pwd.h>
 
 #include <readline/readline.h>
 #include <readline/history.h>
 
 static char *getuser() {
-  register struct passwd *pw;
-  register uid_t uid = geteuid ();
-
-  pw = getpwuid(uid);
+  uid_t uid = geteuid ();
+  struct passwd *pw = getpwuid(uid);
 
   if(pw) {
     return pw->pw_name;
@@ -44,7 +39,7 @@ static int append(char **str, const char *buf, int size) {
 } 
 
 static char *build_prompt(char *fmt, char *prompt) {
-  prompt = NULL;
+  prompt = NULL; /* Zero out all data in prompt */
 
   while(*fmt) {
     if(*fmt == '%') {
@@ -78,7 +73,8 @@ static char *build_prompt(char *fmt, char *prompt) {
 }
 
 char *shell_getline(char *promptfmt, char *line) {
-  char *prompt = build_prompt(promptfmt, prompt);
+  char *prompt = NULL;
+  prompt = build_prompt(promptfmt, prompt); /* expand promptfmt into an actual meaningful prompt (such as dtscode@dtsh: /home/dtscode/$) */
   line = readline(prompt);
 
   while(strcmp(line, "") == 0) {

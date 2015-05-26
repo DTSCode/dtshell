@@ -1,2 +1,12 @@
 Todo list:
+ * Write shell code parser (namely quote handling)
  * Clean up shell_execute.c
+ * Implement piping
+ * Implement signal handling
+ * Put in command line args
+ * read from ~/.dtsh
+ * Implement full ~ semantics
+ * Put in Contributers/Readme
+ * Support for shell scripts
+ * Variables
+ * Provide custom asprintf if not present
